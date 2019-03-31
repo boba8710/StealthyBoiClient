@@ -13,12 +13,9 @@ import networking.StealthyUDPClientSocket;
 public class MainClient {
 	public static void main(String[] args) {
 		try {
-			MultiserviceStealthUDPSocket theHopper = new MultiserviceStealthUDPSocket(args[0]);
-			CommandChannel cc = new CommandChannel(args[0]);
-			Thread t = new Thread(cc);
-			t.start();
-			String hoppingMessage = "This is a test hopping message";
-			theHopper.sendHoppingStealthMessage(hoppingMessage, 500);
+			MultiserviceStealthUDPSocket msus = new MultiserviceStealthUDPSocket(args[0]);
+			CommandChannel cc = new CommandChannel(args[0],msus);
+			cc.run();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

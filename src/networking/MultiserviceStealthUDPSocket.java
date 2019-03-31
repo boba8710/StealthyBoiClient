@@ -74,33 +74,34 @@ public class MultiserviceStealthUDPSocket {
     		return -1;
     	}
     }
-    public void sendHoppingStealthMessage(String msg, long waitTimeMillis){
+    public void sendHoppingStealthMessage(byte[] msg, long waitTimeMillis){
     	
     	System.out.println("[+] Sending Quiet Message");
-    	List<String> messageChunks = NetUtil.getParts(msg,1);
-    	IntStream msgStream = msg.chars();
     	int i = 0;
-    	while(i<messageChunks.size()){
+    	while(i<msg.length){
     		int randVal = rand.nextInt(availablePorts.size());
     		int port = availablePorts.get(randVal);
-    		
     		String[] cloakData = port2CloakData(port);
     		int bytesPerPacket = port2BPP(port);
-    		String s = "";
-    		for(int j = 0; j < bytesPerPacket; j++){
+    		
+    		byte[] packetBuffer = new byte[cloakData[0].length()+bytesPerPacket+cloakData[1].length()];
+    		
+    		for(int j = cloakData[0].length(); j < cloakData[0].length()+bytesPerPacket; j++){
     			try{
-    				s+=messageChunks.get(i++);
+    				packetBuffer[j]=msg[i++];
     			}catch(Exception e){
     				System.out.println("[x] Overrun! Sending random data!");
-    				s+=(char)rand.nextInt(Character.MAX_VALUE);
+    				packetBuffer[j]=(byte)rand.nextInt();
     				i++;
     			}
     			
     		}
-    		byte[] packetBuffer = (cloakData[0]+s+cloakData[1]).getBytes();
     		DatagramPacket pack = new DatagramPacket(packetBuffer,packetBuffer.length, address,port);
     		try {
     			System.out.println("[>] Sending data to "+address+":"+port);
+    			for(int k = 0; k < bytesPerPacket; k++){
+    				System.out.println("[D]	"+packetBuffer[cloakData[0].length()+k]);
+    			}
 				socket.send(pack);
 				Thread.sleep(waitTimeMillis);
 			} catch (IOException | InterruptedException e) {
