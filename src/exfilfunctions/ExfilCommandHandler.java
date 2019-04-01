@@ -30,8 +30,6 @@ public class ExfilCommandHandler {
 			int c;
 			ArrayList<Byte> exfilBytes = new ArrayList<Byte>();
 			while ((c = fis.read()) != -1) {
-				System.out.println(Integer.toHexString((byte) c));
-				System.out.println((char) c);
 				exfilBytes.add((byte) c);
 	        }
 			byte[] exfilByteArray = new byte[exfilBytes.size()];

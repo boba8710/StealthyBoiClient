@@ -61,13 +61,13 @@ public class MultiserviceStealthUDPSocket {
     }
     private int port2BPP(int port){
     	if(port==53){
-    		return 2;
+    		return 1;
     	}else if(port == 5355){
-    		return 2;
+    		return 1;
     	}else if(port == 67){
-    		return 4;
+    		return 3;
     	}else if(port == 123) {
-    		return 4;
+    		return 3;
     	}
     	
     	else{
@@ -75,7 +75,8 @@ public class MultiserviceStealthUDPSocket {
     	}
     }
     public void sendHoppingStealthMessage(byte[] msg, long waitTimeMillis){
-    	
+    	int seqNum = 0;
+    	int overallCount = 0;
     	System.out.println("[+] Sending Quiet Message");
     	int i = 0;
     	while(i<msg.length){
@@ -88,6 +89,7 @@ public class MultiserviceStealthUDPSocket {
     		
     		for(int j = cloakData[0].length(); j < cloakData[0].length()+bytesPerPacket; j++){
     			try{
+    				overallCount++;
     				packetBuffer[j]=msg[i++];
     			}catch(Exception e){
     				System.out.println("[x] Overrun! Sending random data!");
@@ -96,17 +98,20 @@ public class MultiserviceStealthUDPSocket {
     			}
     			
     		}
+    		packetBuffer[cloakData[0].length()+bytesPerPacket] = (byte) seqNum++;
     		DatagramPacket pack = new DatagramPacket(packetBuffer,packetBuffer.length, address,port);
     		try {
     			System.out.println("[>] Sending data to "+address+":"+port);
     			for(int k = 0; k < bytesPerPacket; k++){
     				System.out.println("[D]	"+packetBuffer[cloakData[0].length()+k]);
     			}
+    			System.out.println("[#] "+(int)packetBuffer[cloakData[0].length()+bytesPerPacket]);
 				socket.send(pack);
 				Thread.sleep(waitTimeMillis);
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}
+    		System.out.println("[%] "+(float)overallCount/(float)msg.length);
     	}
     }
     public void close() {
