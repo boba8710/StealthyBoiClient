@@ -12,13 +12,18 @@ import networking.StealthyUDPClientSocket;
 
 public class MainClient {
 	public static void main(String[] args) {
-		try {
-			MultiserviceStealthUDPSocket msus = new MultiserviceStealthUDPSocket(args[0]);
-			CommandChannel cc = new CommandChannel(args[0],msus);
-			cc.run();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		System.out.println(System.getProperty("os.name"));
+		while(true){
+			try {
+				Thread.sleep(1000);
+				MultiserviceStealthUDPSocket msus = new MultiserviceStealthUDPSocket(args[0]);
+				CommandChannel cc = new CommandChannel(args[0],msus);
+				cc.run();
+			} catch (IOException | InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
+		
 	}
 }
